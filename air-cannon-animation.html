@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>得丰地 Devondi · STORM 空气炮料仓清堵工作动画</title>
+<style>
+  /* ============================================================
+     Devondi 得丰地 · STORM Air Cannon — silo de-clogging animation
+     Single file · animated SVG (CSS + SMIL) · loops continuously
+     Cycle:  bridged material → cannon charges → AIR BLAST →
+             arch collapses → free flow → recharge → repeat
+     ============================================================ */
+  :root{
+    --steel-900:#070c12;
+    --steel-800:#0d141d;
+    --steel-700:#152030;
+    --steel-600:#1d2c40;
+    --line:#2a3b52;
+    --paper:#e9f2fb;
+    --muted:#8fa6bf;
+    --flow:#22d3ee;
+    --flow-soft:#7df0ff;
+    --amber:#ff7a00;
+    --amber-soft:#ffb04d;
+    --green:#34d399;
+    --red:#ef4444;
+    --font:"Helvetica Neue",Helvetica,Arial,"PingFang SC","Microsoft YaHei",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{background:#03060a;font-family:var(--font);}
+  body{display:grid;place-items:center;min-height:100vh;padding:28px;}
+
+  .stage{
+    position:relative;width:560px;max-width:100%;aspect-ratio:3/4;
+    background:
+      radial-gradient(120% 70% at 80% 6%, rgba(255,122,0,.16), transparent 52%),
+      radial-gradient(120% 80% at 0% 102%, rgba(34,211,238,.12), transparent 55%),
+      linear-gradient(165deg,var(--steel-800) 0%, var(--steel-900) 72%);
+    border:1px solid var(--line);border-radius:18px;overflow:hidden;
+    box-shadow:0 30px 90px rgba(0,0,0,.6);
+  }
+  .grid{
+    position:absolute;inset:0;opacity:.5;
+    background-image:
+      linear-gradient(rgba(120,200,230,.05) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,200,230,.05) 1px, transparent 1px);
+    background-size:30px 30px;
+    -webkit-mask-image:linear-gradient(180deg,#000 0%, transparent 85%);
+            mask-image:linear-gradient(180deg,#000 0%, transparent 85%);
+  }
+
+  /* ---- header ---- */
+  .hdr{position:absolute;z-index:5;top:22px;left:26px;right:26px;
+    display:flex;align-items:center;justify-content:space-between;}
+  .hdr .lhs{display:flex;align-items:center;gap:11px;}
+  .hdr .mark{width:36px;height:36px;}
+  .hdr b{font-size:18px;font-weight:900;color:#fff;letter-spacing:.02em;line-height:1;}
+  .hdr small{display:block;font-size:9.5px;font-weight:700;letter-spacing:.34em;color:var(--flow-soft);margin-top:4px;}
+  .hdr .tag{text-align:right;font-size:9.5px;font-weight:800;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--muted);line-height:1.7;}
+
+  /* ---- live status pill ---- */
+  .status{position:absolute;z-index:5;left:26px;top:74px;
+    display:flex;align-items:center;gap:8px;padding:7px 13px;border-radius:999px;
+    background:#0e2a39;border:1px solid var(--line);}
+  .status .dot{width:9px;height:9px;border-radius:50%;background:var(--amber);
+    animation:statusdot 6s linear infinite;}
+  .status span{font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--paper);}
+  @keyframes statusdot{
+    0%,22%   {background:var(--red);   box-shadow:0 0 8px var(--red);}
+    26%,33%  {background:var(--amber); box-shadow:0 0 10px var(--amber);}
+    37%,60%  {background:var(--flow);  box-shadow:0 0 12px var(--flow);}
+    64%,100% {background:var(--green); box-shadow:0 0 8px var(--green);}
+  }
+
+  /* ---- caption ---- */
+  .cap{position:absolute;z-index:5;left:26px;right:26px;bottom:24px;}
+  .cap h1{font-size:20px;font-weight:900;color:#fff;letter-spacing:.01em;}
+  .cap h1 .ac{color:var(--amber);}
+  .cap p{margin-top:7px;font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.55;}
+  .cap .phase{position:relative;margin-top:11px;height:16px;
+    font-size:11px;font-weight:800;letter-spacing:.04em;color:var(--flow-soft);}
+  .cap .phase b{color:#fff;}
+
+  svg.scene{position:absolute;z-index:3;inset:0;width:100%;height:100%;}
+
+  /* phase label cross-fade (4 spans stacked on top of each other) */
+  .pl{position:absolute;left:0;top:0;white-space:nowrap;opacity:0;
+    animation:plcycle 6s linear infinite;}
+  .pl:nth-child(1){animation-delay:0s;}
+  .pl:nth-child(2){animation-delay:1.0s;}
+  .pl:nth-child(3){animation-delay:1.6s;}
+  .pl:nth-child(4){animation-delay:2.7s;}
+  @keyframes plcycle{0%,2%{opacity:0;transform:translateY(4px);}
+    5%,22%{opacity:1;transform:none;} 26%,100%{opacity:0;transform:translateY(-3px);}}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:0.001s!important;animation-iteration-count:1!important;}
+  }
+</style>
+</head>
+<body>
+  <div class="stage" role="img" aria-label="得丰地 STORM 空气炮料仓清堵工作动画">
+    <div class="grid"></div>
+
+    <!-- header -->
+    <div class="hdr">
+      <div class="lhs">
+        <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
+          <defs><linearGradient id="mk" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#ff9a3c"/><stop offset="1" stop-color="#ff7a00"/>
+          </linearGradient></defs>
+          <rect x="4" y="4" width="56" height="56" rx="13" fill="url(#mk)"/>
+          <path d="M20 16h24l-6 16v8a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4v-8z"
+                fill="none" stroke="#0c1014" stroke-width="3.4" stroke-linejoin="round"/>
+          <path d="M32 40v10m0 0-5-5m5 5 5-5" fill="none" stroke="#0c1014"
+                stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div><b>DEVONDI · 得丰地</b><small>STORM™ 空气炮</small></div>
+      </div>
+      <div class="tag">Air&nbsp;Cannon<br>料仓清堵系统</div>
+    </div>
+
+    <!-- live status -->
+    <div class="status"><span class="dot"></span><span>STORM · 自动清堵循环</span></div>
+
+    <!-- ===================== SCENE ===================== -->
+    <svg class="scene" viewBox="0 0 560 747" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <defs>
+        <linearGradient id="silo" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#33455c"/><stop offset="1" stop-color="#16202e"/>
+        </linearGradient>
+        <linearGradient id="cone" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#1d2c40"/><stop offset="1" stop-color="#0c1119"/>
+        </linearGradient>
+        <linearGradient id="mat" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#ffc06b"/><stop offset="1" stop-color="#ff7a00"/>
+        </linearGradient>
+        <linearGradient id="tank" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3a4656"/><stop offset="1" stop-color="#1a2330"/>
+        </linearGradient>
+        <radialGradient id="blast" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#bff7ff" stop-opacity=".95"/>
+          <stop offset="35%" stop-color="#22d3ee" stop-opacity=".7"/>
+          <stop offset="100%" stop-color="#22d3ee" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="charge" cx="50%" cy="50%" r="50%">
+          <stop offset="0" stop-color="#ffd9a0" stop-opacity=".9"/>
+          <stop offset="100%" stop-color="#ff7a00" stop-opacity="0"/>
+        </radialGradient>
+        <clipPath id="siloClip"><path d="M150 150h260v220l-90 120h-80l-90-120z"/></clipPath>
+      </defs>
+
+      <!-- ---- support legs ---- -->
+      <g stroke="#2a3b52" stroke-width="9" stroke-linecap="round">
+        <line x1="178" y1="470" x2="150" y2="612"/>
+        <line x1="382" y1="470" x2="410" y2="612"/>
+      </g>
+
+      <!-- ===== material inside silo (clipped to silo shape) ===== -->
+      <g clip-path="url(#siloClip)">
+        <!-- top stored bulk that sits above the arch -->
+        <rect x="150" y="150" width="260" height="120" fill="url(#mat)" opacity=".95"/>
+        <!-- texture specks in stored bulk -->
+        <g fill="#8a4a00" opacity=".35">
+          <circle cx="195" cy="195" r="4"/><circle cx="250" cy="180" r="5"/>
+          <circle cx="315" cy="200" r="4"/><circle cx="365" cy="185" r="5"/>
+          <circle cx="225" cy="230" r="4"/><circle cx="345" cy="240" r="4"/>
+        </g>
+
+        <!-- the BRIDGE / arch (rat-hole) that blocks discharge -->
+        <path id="arch" d="M150 270
+              q130 -40 260 0
+              l0 26
+              q-130 -16 -260 0 z" fill="url(#mat)">
+          <!-- arch sags, cracks and collapses on blast, then reforms -->
+          <animate attributeName="d" dur="6s" repeatCount="indefinite"
+            calcMode="spline" keyTimes="0;0.22;0.30;0.40;0.95;1"
+            keySplines="0.4 0 0.6 1;0.9 0 1 1;0.7 0 0.3 1;0.4 0 0.6 1;0.4 0 0.6 1"
+            values="
+              M150 270 q130 -40 260 0 l0 26 q-130 -16 -260 0 z;
+              M150 268 q130 -34 260 0 l0 30 q-130 -10 -260 6 z;
+              M150 262 q130 -20 260 0 l0 40 q-130 14 -260 26 z;
+              M150 270 q130 250 260 0 l0 10 q-130 250 -260 0 z;
+              M150 270 q130 250 260 0 l0 10 q-130 250 -260 0 z;
+              M150 270 q130 -40 260 0 l0 26 q-130 -16 -260 0 z"/>
+          <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+            keyTimes="0;0.30;0.40;0.92;1" values="1;1;0;0;1"/>
+        </path>
+
+        <!-- refill: stored bulk drops down to refill after discharge -->
+        <rect x="150" y="150" width="260" height="120" fill="url(#mat)" opacity="0">
+          <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+            keyTimes="0;0.40;0.60;0.95;1" values="0;0;0;0;0"/>
+        </rect>
+      </g>
+
+      <!-- ===== falling material stream (free flow after blast) ===== -->
+      <g>
+        <!-- discharge column -->
+        <rect x="262" y="490" width="36" height="0" rx="6" fill="url(#mat)">
+          <animate attributeName="height" dur="6s" repeatCount="indefinite"
+            keyTimes="0;0.30;0.40;0.78;0.86;1" values="0;0;120;120;0;0"/>
+          <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+            keyTimes="0;0.30;0.40;0.80;0.88;1" values="0;0;1;1;0;0"/>
+        </rect>
+        <!-- falling grains (start hidden; revealed only during discharge) -->
+        <g fill="url(#mat)">
+          <circle cx="270" cy="560" r="6" opacity="0">
+            <animate attributeName="cy" dur="1.1s" begin="2.4s" repeatCount="indefinite"
+              keyTimes="0;1" values="500;624"/>
+            <animate attributeName="opacity" dur="1.1s" begin="2.4s" repeatCount="indefinite"
+              keyTimes="0;0.1;0.82;1" values="0;1;1;0"/></circle>
+          <circle cx="290" cy="560" r="5" opacity="0">
+            <animate attributeName="cy" dur="1.1s" begin="2.65s" repeatCount="indefinite"
+              keyTimes="0;1" values="495;630"/>
+            <animate attributeName="opacity" dur="1.1s" begin="2.65s" repeatCount="indefinite"
+              keyTimes="0;0.1;0.82;1" values="0;1;1;0"/></circle>
+          <circle cx="280" cy="560" r="7" opacity="0">
+            <animate attributeName="cy" dur="1.1s" begin="2.9s" repeatCount="indefinite"
+              keyTimes="0;1" values="500;628"/>
+            <animate attributeName="opacity" dur="1.1s" begin="2.9s" repeatCount="indefinite"
+              keyTimes="0;0.1;0.82;1" values="0;1;1;0"/></circle>
+          <circle cx="300" cy="560" r="4" opacity="0">
+            <animate attributeName="cy" dur="1.1s" begin="3.15s" repeatCount="indefinite"
+              keyTimes="0;1" values="498;632"/>
+            <animate attributeName="opacity" dur="1.1s" begin="3.15s" repeatCount="indefinite"
+              keyTimes="0;0.1;0.82;1" values="0;1;1;0"/></circle>
+          <circle cx="262" cy="560" r="5" opacity="0">
+            <animate attributeName="cy" dur="1.1s" begin="3.4s" repeatCount="indefinite"
+              keyTimes="0;1" values="500;626"/>
+            <animate attributeName="opacity" dur="1.1s" begin="3.4s" repeatCount="indefinite"
+              keyTimes="0;0.1;0.82;1" values="0;1;1;0"/></circle>
+        </g>
+        <!-- collecting pile beneath the outlet -->
+        <ellipse cx="280" cy="614" rx="10" ry="5" fill="url(#mat)" opacity="0">
+          <animate attributeName="rx" dur="6s" repeatCount="indefinite"
+            keyTimes="0;0.40;0.80;0.95;1" values="6;6;52;6;6"/>
+          <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+            keyTimes="0;0.40;0.42;0.86;0.95;1" values="0;0;0.95;0.95;0;0"/>
+        </ellipse>
+      </g>
+
+      <!-- ===== silo body (drawn over material, semi-transparent front) ===== -->
+      <!-- body outline -->
+      <path d="M150 150h260v220l-90 120h-80l-90-120z" fill="none"
+            stroke="#46586a" stroke-width="3"/>
+      <!-- silo front glass-ish panel so material shows through faintly -->
+      <path d="M150 150h260v220l-90 120h-80l-90-120z" fill="#0d141d" opacity=".10"/>
+      <!-- cone walls -->
+      <path d="M150 370l90 120M410 370l-90 120" fill="none" stroke="#46586a" stroke-width="3"/>
+      <!-- seams -->
+      <g stroke="#46586a" stroke-width="1.6" opacity=".7">
+        <line x1="150" y1="215" x2="410" y2="215"/>
+        <line x1="150" y1="300" x2="410" y2="300"/>
+      </g>
+      <!-- top cap -->
+      <path d="M150 154c0-18 58-28 130-28s130 10 130 28z" fill="#46586a"/>
+      <rect x="266" y="104" width="28" height="24" rx="4" fill="#33414f"/>
+      <!-- discharge outlet -->
+      <rect x="258" y="488" width="44" height="14" rx="3" fill="#1d2c40" stroke="#46586a" stroke-width="2"/>
+
+      <!-- fluidization shock ripple climbing the wall on blast -->
+      <g stroke="#7df0ff" stroke-width="3" fill="none" opacity="0">
+        <path d="M180 360q14 -16 0 -32"/>
+        <path d="M168 366q24 -28 0 -56"/>
+        <animateTransform attributeName="transform" type="scale" additive="sum"
+          dur="6s" repeatCount="indefinite" keyTimes="0;0.30;0.40;1" values="1;1;1;1"/>
+        <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+          keyTimes="0;0.28;0.32;0.46;1" values="0;0;0.9;0;0"/>
+      </g>
+
+      <!-- ===================== STORM AIR CANNON ===================== -->
+      <!-- mounted on the right cone, nozzle aimed into the silo arch zone -->
+      <g>
+        <!-- mounting nozzle pipe through silo wall -->
+        <path d="M300 320 L398 300" stroke="#46586a" stroke-width="13" stroke-linecap="round"/>
+        <path d="M300 320 L398 300" stroke="#5a6f84" stroke-width="5" stroke-linecap="round"/>
+
+        <!-- charge glow at tank valve before firing -->
+        <circle cx="404" cy="298" r="0" fill="url(#charge)">
+          <animate attributeName="r" dur="6s" repeatCount="indefinite"
+            keyTimes="0;0.10;0.28;0.30;1" values="0;0;26;0;0"/>
+        </circle>
+
+        <!-- pressure tank -->
+        <g>
+          <rect x="396" y="262" width="120" height="72" rx="36" fill="url(#tank)"
+                stroke="#ff7a00" stroke-width="4"/>
+          <!-- internal pressure fill bar -->
+          <clipPath id="tankClip"><rect x="400" y="266" width="112" height="64" rx="32"/></clipPath>
+          <g clip-path="url(#tankClip)">
+            <rect x="400" y="266" width="0" height="64" fill="#ff7a00" opacity=".55">
+              <!-- pressurise 0->full, dump to 0 on fire, recharge -->
+              <animate attributeName="width" dur="6s" repeatCount="indefinite"
+                calcMode="spline" keyTimes="0;0.26;0.30;0.34;0.95;1"
+                keySplines="0.4 0 0.6 1;0.5 0 0.5 1;0.9 0 1 1;0.3 0 0.6 1;0.4 0 0.6 1"
+                values="20;112;112;0;100;20"/>
+            </rect>
+          </g>
+          <!-- valve head -->
+          <circle cx="506" cy="298" r="11" fill="#ff7a00"/>
+          <circle cx="506" cy="298" r="11" fill="#fff" opacity="0">
+            <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+              keyTimes="0;0.29;0.31;0.36;1" values="0;0;0.9;0;0"/>
+          </circle>
+          <text x="456" y="303" text-anchor="middle" font-size="20" font-weight="900"
+                fill="#ffb04d" font-family="Helvetica,Arial" letter-spacing="1">STORM</text>
+          <!-- air inlet line -->
+          <path d="M516 250 q26 -20 26 -44" stroke="#46586a" stroke-width="6"
+                fill="none" stroke-linecap="round"/>
+          <circle cx="542" cy="206" r="7" fill="#33414f" stroke="#46586a" stroke-width="2"/>
+        </g>
+
+        <!-- ===== THE BLAST ===== -->
+        <!-- main blast ball erupting from nozzle into silo -->
+        <circle cx="320" cy="316" r="60" fill="url(#blast)" opacity="0">
+          <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+            keyTimes="0;0.295;0.30;0.40;0.46;1" values="0;0;1;0.6;0;0"/>
+          <animate attributeName="r" dur="6s" repeatCount="indefinite"
+            calcMode="spline" keyTimes="0;0.30;0.42;1"
+            keySplines="0.1 0.7 0.3 1;0.3 0 0.7 1;0 0 1 1"
+            values="14;14;96;96"/>
+          <animate attributeName="cx" dur="6s" repeatCount="indefinite"
+            keyTimes="0;0.30;0.42;1" values="380;380;300;300"/>
+        </circle>
+
+        <!-- shock rays -->
+        <g stroke="#bff7ff" stroke-width="4" stroke-linecap="round" opacity="0">
+          <line x1="360" y1="316" x2="300" y2="316"/>
+          <line x1="356" y1="296" x2="304" y2="276"/>
+          <line x1="356" y1="336" x2="304" y2="356"/>
+          <line x1="366" y1="306" x2="320" y2="294"/>
+          <line x1="366" y1="326" x2="320" y2="338"/>
+          <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+            keyTimes="0;0.295;0.30;0.38;1" values="0;0;1;0;0"/>
+          <animateTransform attributeName="transform" type="translate"
+            dur="6s" repeatCount="indefinite" calcMode="spline"
+            keyTimes="0;0.30;0.40;1" keySplines="0.2 0.6 0.3 1;0.3 0 0.7 1;0 0 1 1"
+            values="40 0;40 0;-30 0;-30 0"/>
+        </g>
+
+        <!-- dust puffs kicked up by blast -->
+        <g fill="#bff7ff" opacity="0">
+          <circle cx="300" cy="300" r="8"/><circle cx="285" cy="320" r="6"/>
+          <circle cx="312" cy="332" r="7"/><circle cx="275" cy="305" r="5"/>
+          <animate attributeName="opacity" dur="6s" repeatCount="indefinite"
+            keyTimes="0;0.30;0.33;0.44;1" values="0;0;0.8;0;0"/>
+          <animateTransform attributeName="transform" type="scale"
+            dur="6s" repeatCount="indefinite" additive="sum"
+            keyTimes="0;0.30;0.44;1" values="0.5;0.5;1.6;1.6"/>
+        </g>
+      </g>
+
+      <!-- recoil shudder on the whole cannon at fire moment -->
+      <animateTransform xlink:href="#cannonShake" attributeName="transform"/>
+    </svg>
+
+    <!-- caption -->
+    <div class="cap">
+      <h1>STORM™ <span class="ac">空气炮</span>料仓清堵</h1>
+      <p>高压气体瞬间释放，强力冲击破除起拱、堵料与挂壁，恢复物料自由流动。</p>
+      <div class="phase">
+        <span class="pl">① <b>堵料起拱</b> — 物料结拱，出料中断</span>
+        <span class="pl">② <b>蓄能加压</b> — 储气罐充压至工作压力</span>
+        <span class="pl">③ <b>瞬时喷吹</b> — 高能气爆冲击料拱</span>
+        <span class="pl">④ <b>恢复流动</b> — 拱桥溃散，自由出料</span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
