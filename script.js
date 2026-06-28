@@ -1,33 +1,55 @@
 /* ============================================================
    Devondi (得丰地) — single-page site interactions
    - Mobile nav toggle
-   - Auto-close menu on link click
-   - Dynamic footer year
+   - Close menu on link click / outside click
+   - Current year in footer
    ============================================================ */
 (function () {
   "use strict";
 
-  var toggle = document.getElementById("nav-toggle");
-  var nav = document.getElementById("main-nav");
+  var toggle = document.getElementById("navToggle");
+  var menu = document.getElementById("navMenu");
 
-  if (toggle && nav) {
-    toggle.addEventListener("click", function () {
-      var open = nav.classList.toggle("open");
+  function closeMenu() {
+    if (!menu || !toggle) return;
+    menu.classList.remove("is-open");
+    toggle.classList.remove("is-open");
+    toggle.setAttribute("aria-expanded", "false");
+  }
+
+  if (toggle && menu) {
+    toggle.addEventListener("click", function (e) {
+      e.stopPropagation();
+      var open = menu.classList.toggle("is-open");
+      toggle.classList.toggle("is-open", open);
       toggle.setAttribute("aria-expanded", open ? "true" : "false");
     });
 
-    // Close the mobile menu after choosing a destination
-    nav.addEventListener("click", function (e) {
-      if (e.target.closest("a") && nav.classList.contains("open")) {
-        nav.classList.remove("open");
-        toggle.setAttribute("aria-expanded", "false");
+    // Close the menu when a nav link is tapped (mobile)
+    menu.querySelectorAll("a").forEach(function (link) {
+      link.addEventListener("click", closeMenu);
+    });
+
+    // Close when clicking outside the menu
+    document.addEventListener("click", function (e) {
+      if (
+        menu.classList.contains("is-open") &&
+        !menu.contains(e.target) &&
+        !toggle.contains(e.target)
+      ) {
+        closeMenu();
       }
+    });
+
+    // Close on Escape
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") closeMenu();
     });
   }
 
-  // Keep the footer copyright year current
+  // Footer year
   var yearEl = document.getElementById("year");
   if (yearEl) {
-    yearEl.textContent = new Date().getFullYear();
+    yearEl.textContent = String(new Date().getFullYear());
   }
 })();
